@@ -1,19 +1,19 @@
 substitutions:
-  name: bluetooth-proxy-hub
+  device_name: bluetooth-proxy-hub
   api_url: !secret update_url
   friendly_name: BLE Gateway
-  board: esp32dev
+  
 
 esphome:
-  name: ${name}
-  name_add_mac_suffix: true
+  name: ${device_name}
+  #name_add_mac_suffix: true
   friendly_name: "${friendly_name}"
   project:
-    name: bbt.blegtw
+    name: Bibliotehnika.blegtw
     version: "2024.10.3"
 
 esp32:
-  board: ${board}
+  board: esp32dev
   framework:
     type: esp-idf
 
@@ -30,26 +30,27 @@ wifi:
   fast_connect: true
 
   ap:
-    ssid: "bluetooth-proxy-hub"
+    ssid: "${device_name}"
     password: !secret wifi_pass
 
 captive_portal:
 
 api:
 
-# mqtt:
-#   broker: !secret broker_ip
-#   port: 1883
-#   id: rf_mqtt
-#   username: esphome
-#   password: !secret mqtt_password
-# # ...Status
-#   birth_message:
-#     topic: esphome/${name}/status
-#     payload: online
-#   will_message:
-#     topic: esphome/${name}/status
-#     payload: offline
+mqtt:
+  broker: !secret broker_ip
+  port: 1883
+  id: rf_mqtt
+  username: esphome
+  password: !secret mqtt_password
+  discovery: false
+# ...Status
+  birth_message:
+    topic: esphome/${device_name}/status
+    payload: online
+  will_message:
+    topic: esphome/${device_name}/status
+    payload: offline
 
 logger:
 
@@ -59,14 +60,18 @@ http_request:
 
 ota:
   - platform: esphome
-    #password: !secret remote_pass
+    password: !secret remote_pass
   - platform: http_request
-    
+
+update:
+  - platform: http_request
+    name: Firmware Update
+    source: ${api_url}   
 
 improv_serial:
 
-#dashboard_import:
-#  package_import_url: github://esphome/bluetooth-proxies/esp32-generic.yaml@main
+dashboard_import:
+  package_import_url: !secret package_url
 
 esp32_ble_tracker:
   scan_parameters:
@@ -84,12 +89,12 @@ button:
     on_press:
       then:
         - ota.http_request.flash:
-            md5_url: https://github.com/tominik83/${name}/raw/refs/heads/main/firmware.md5
-            url: https://github.com/tominik83/${name}/raw/refs/heads/main/firmware.ota.bin
+            md5_url: https://github.com/tominik83/bluetooth-proxy-hub/raw/refs/heads/main/firmware.md5
+            url: https://github.com/tominik83/bluetooth-proxy-hub/raw/refs/heads/main/firmware.ota.bin
             username: !secret web_user
             password: !secret web_pass
         - logger.log: "This message should not be displayed because the device reboots"
-
+    entity_category: diagnostic
 
   
   - platform: shutdown
